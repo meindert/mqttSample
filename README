@@ -1,0 +1,12 @@
+Be sure to serve the files from a web service. Opening index.html from local file system will not work when establishing the WebSocket connection.
+
+Start the server by running 'gulp' from the root in a terminal window
+The page is loaded on http://localhost:3000/
+
+
+You probably have to install npm, node, gulp and gulp-serve
+i.e. npm install gulp-serve --save-dev
+
+To get through the proxy you need to tell npm:
+npm config set proxy http://sid:password@cachesouth.mud.internal.co.za:8080/
+npm config set https-proxy proxy http://sid:password@cachesouth.mud.internal.co.za:8080/
