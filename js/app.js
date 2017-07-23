@@ -7,12 +7,12 @@ Licensed under the Apache License, Version 2.0 (the "License"). You may not use 
 
 or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 */
-(function() {
+(function () {
   'use strict';
 
   var fingerprint = new Fingerprint().get();
 
-  function LogMsg(type, content){
+  function LogMsg(type, content) {
     this.type = type;
     this.content = content;
     this.createdTime = Date.now();
@@ -23,16 +23,16 @@ or in the "license" file accompanying this file. This file is distributed on an 
     }
   }
 
-  function LogService(){
+  function LogService() {
     this.logs = [];
   }
 
-  LogService.prototype.log = function(msg) {
+  LogService.prototype.log = function (msg) {
     var logObj = new LogMsg('success', msg);
     this.logs.push(logObj);
   };
 
-  LogService.prototype.logError = function(msg) {
+  LogService.prototype.logError = function (msg) {
     var logObj = new LogMsg('error', msg);
     this.logs.push(logObj);
   };
@@ -50,22 +50,29 @@ or in the "license" file accompanying this file. This file is distributed on an 
   }
 
   /** controller of the app */
-  function AppController(scope){
-    
+  function AppController(scope) {
+
     this.clientId = 'santam_' + fingerprint;
-    this.endpoint = 'a1udr0qzhg5qir.iot.eu-central-1.amazonaws.com';
+    this.endpoint = 'a1udr0qzhg5qir.iot.eu-west-1.amazonaws.com';
     this.accessKey = 'AKIAIZFPXKJIAATACDUA';
     this.secretKey = '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';
-    this.regionName = 'eu-central-1';
+    this.regionName = 'eu-west-1';
     this.logs = new LogService();
     this.clients = new ClientControllerCache(scope, this.logs);
   }
 
   AppController.$inject = ['$scope'];
 
-  AppController.prototype.createClient = function() {
+  AppController.prototype.creatDomain = function () {
+    console.log("Button pressed");
+   
+
+  };
+
+  AppController.prototype.createClient = function () {
+    console.log("Button pressed");
     var options = {
-      clientId : this.clientId,
+      clientId: this.clientId,
       endpoint: this.endpoint.toLowerCase(),
       accessKey: this.accessKey,
       secretKey: this.secretKey,
@@ -77,7 +84,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
     }
   };
 
-  AppController.prototype.removeClient = function(clientCtr) {
+  AppController.prototype.removeClient = function (clientCtr) {
     this.clients.removeClient(clientCtr);
   };
 
@@ -85,54 +92,54 @@ or in the "license" file accompanying this file. This file is distributed on an 
   function ClientController(client, logs) {
     this.client = client;
     this.topicName = 'animal/nathan';
-    this.message = fingerprint;
+    this.message = '{"fingerprint":"' + fingerprint + '",	  "vote" : { "nathan" : "lion" }}';
     this.msgs = [];
     this.logs = logs;
     var self = this;
 
-    this.client.on('connectionLost', function(){
+    this.client.on('connectionLost', function () {
       self.logs.logError('Connection lost');
     });
-    this.client.on('messageArrived', function(msg){
+    this.client.on('messageArrived', function (msg) {
       self.logs.log('messageArrived in ' + self.id);
       self.msgs.push(new ReceivedMsg(msg));
     });
-    this.client.on('connected', function(){
+    this.client.on('connected', function () {
       self.logs.log('connected');
     });
-    this.client.on('subscribeFailed', function(e){
+    this.client.on('subscribeFailed', function (e) {
       self.logs.logError('subscribeFailed ' + e);
     });
-    this.client.on('subscribeSucess', function(){
+    this.client.on('subscribeSucess', function () {
       self.logs.log('subscribeSucess');
     });
-    this.client.on('publishFailed', function(e){
+    this.client.on('publishFailed', function (e) {
       self.logs.log('publishFailed');
     });
   }
 
-  ClientController.prototype.subscribe = function() {
+  ClientController.prototype.subscribe = function () {
     this.client.subscribe(this.topicName);
   };
 
-  ClientController.prototype.publish = function() {
+  ClientController.prototype.publish = function () {
     this.client.publish(this.topicName, this.message);
   };
 
-  ClientController.prototype.msgInputKeyUp = function($event) {
+  ClientController.prototype.msgInputKeyUp = function ($event) {
     if ($event.keyCode === 13) {
       this.publish();
     }
   };
 
 
-  function ClientControllerCache(scope, logs){
+  function ClientControllerCache(scope, logs) {
     this.scope = scope;
     this.logs = logs;
     this.val = [];
   }
 
-  ClientControllerCache.prototype.getClient = function(options) {
+  ClientControllerCache.prototype.getClient = function (options) {
     var id = options.accessKey + '>' + options.clientId + '@' + options.endpoint;
     for (var i = 0; i < this.val.length; i++) {
       var ctr = this.val[i];
@@ -140,14 +147,14 @@ or in the "license" file accompanying this file. This file is distributed on an 
         return ctr.client;
       }
     }
-    var client =  new MQTTClient(options, this.scope);
+    var client = new MQTTClient(options, this.scope);
     var clientController = new ClientController(client, this.logs);
     clientController.id = id;
     this.val.push(clientController);
     return client;
   };
 
-  ClientControllerCache.prototype.removeClient = function(clientCtr) {
+  ClientControllerCache.prototype.removeClient = function (clientCtr) {
     clientCtr.client.disconnect();
     var index = this.val.indexOf(clientCtr);
     this.val.splice(index, 1);
@@ -158,19 +165,19 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * utilities to do sigv4
    * @class SigV4Utils
    */
-  function SigV4Utils(){}
+  function SigV4Utils() { }
 
-  SigV4Utils.sign = function(key, msg){
+  SigV4Utils.sign = function (key, msg) {
     var hash = CryptoJS.HmacSHA256(msg, key);
     return hash.toString(CryptoJS.enc.Hex);
   };
 
-  SigV4Utils.sha256 = function(msg) {
+  SigV4Utils.sha256 = function (msg) {
     var hash = CryptoJS.SHA256(msg);
     return hash.toString(CryptoJS.enc.Hex);
   };
 
-  SigV4Utils.getSignatureKey = function(key, dateStamp, regionName, serviceName) {
+  SigV4Utils.getSignatureKey = function (key, dateStamp, regionName, serviceName) {
     var kDate = CryptoJS.HmacSHA256(dateStamp, 'AWS4' + key);
     var kRegion = CryptoJS.HmacSHA256(regionName, kDate);
     var kService = CryptoJS.HmacSHA256(serviceName, kRegion);
@@ -190,7 +197,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
   * @param {angular.IScope}  [scope]  - the angular scope used to trigger UI re-paint, you can
   omit this if you are not using angular
   */
-  function MQTTClient(options, scope){
+  function MQTTClient(options, scope) {
     this.options = options;
     this.scope = scope;
 
@@ -201,14 +208,14 @@ or in the "license" file accompanying this file. This file is distributed on an 
     this.client = new Paho.MQTT.Client(this.endpoint, this.clientId);
     this.listeners = {};
     var self = this;
-    this.client.onConnectionLost = function() {
+    this.client.onConnectionLost = function () {
       self.emit('connectionLost');
       self.connected = false;
     };
-    this.client.onMessageArrived = function(msg) {
+    this.client.onMessageArrived = function (msg) {
       self.emit('messageArrived', msg);
     };
-    this.on('connected', function(){
+    this.on('connected', function () {
       self.connected = true;
     });
   }
@@ -220,7 +227,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * @method     MQTTClient#computeUrl
    * @return     {string}  the websocket url
    */
-  MQTTClient.prototype.computeUrl = function(){
+  MQTTClient.prototype.computeUrl = function () {
     // must use utc time
     var time = moment.utc();
     var dateStamp = time.format('YYYYMMDD');
@@ -246,7 +253,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
     var canonicalRequest = method + '\n' + canonicalUri + '\n' + canonicalQuerystring + '\n' + canonicalHeaders + '\nhost\n' + payloadHash;
     console.log('canonicalRequest ' + canonicalRequest);
 
-    var stringToSign = algorithm + '\n' +  amzdate + '\n' +  credentialScope + '\n' +  SigV4Utils.sha256(canonicalRequest);
+    var stringToSign = algorithm + '\n' + amzdate + '\n' + credentialScope + '\n' + SigV4Utils.sha256(canonicalRequest);
     var signingKey = SigV4Utils.getSignatureKey(secretKey, dateStamp, region, service);
     console.log('stringToSign-------');
     console.log(stringToSign);
@@ -267,7 +274,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
   * @param      {string}  event
   * @param      {Function}  handler
   */
-  MQTTClient.prototype.on = function(event, handler) {
+  MQTTClient.prototype.on = function (event, handler) {
     if (!this.listeners[event]) {
       this.listeners[event] = [];
     }
@@ -280,7 +287,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * @param {string}  event
    * @param {...any} args - event parameters
    */
-  MQTTClient.prototype.emit = function(event) {
+  MQTTClient.prototype.emit = function (event) {
     var listeners = this.listeners[event];
     if (listeners) {
       var args = Array.prototype.slice.apply(arguments, [1]);
@@ -289,7 +296,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
         listener.apply(null, args);
       }
       // make angular to repaint the ui, remove these if you don't use angular
-      if(this.scope && !this.scope.$$phase) {
+      if (this.scope && !this.scope.$$phase) {
         this.scope.$digest();
       }
     }
@@ -299,16 +306,16 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * connect to AWS, should call this method before publish/subscribe
    * @method MQTTClient#connect
    */
-  MQTTClient.prototype.connect = function() {
+  MQTTClient.prototype.connect = function () {
     var self = this;
     var connectOptions = {
-      onSuccess: function(){
+      onSuccess: function () {
         self.emit('connected');
       },
       useSSL: true,
       timeout: 3,
-      mqttVersion:4,
-      onFailure: function() {
+      mqttVersion: 4,
+      onFailure: function () {
         self.emit('connectionLost');
       }
     };
@@ -319,7 +326,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * disconnect
    * @method MQTTClient#disconnect
    */
-  MQTTClient.prototype.disconnect = function() {
+  MQTTClient.prototype.disconnect = function () {
     this.client.disconnect();
   };
 
@@ -329,7 +336,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * @param      {string}  topic
    * @param      {string}  payload
    */
-  MQTTClient.prototype.publish = function(topic, payload) {
+  MQTTClient.prototype.publish = function (topic, payload) {
     try {
       var message = new Paho.MQTT.Message(payload);
       message.destinationName = topic;
@@ -344,18 +351,18 @@ or in the "license" file accompanying this file. This file is distributed on an 
    * @method     MQTTClient#subscribe
    * @param      {string}  topic
    */
-  MQTTClient.prototype.subscribe = function(topic) {
+  MQTTClient.prototype.subscribe = function (topic) {
     var self = this;
-    try{
+    try {
       this.client.subscribe(topic, {
-        onSuccess: function(){
+        onSuccess: function () {
           self.emit('subscribeSucess');
         },
-        onFailure: function(){
+        onFailure: function () {
           self.emit('subscribeFailed');
         }
       });
-    }catch(e) {
+    } catch (e) {
       this.emit('subscribeFailed', e);
     }
 

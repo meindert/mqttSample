@@ -40,6 +40,7 @@
     <div class="row">
       <div class="form-group">
         <button class="btn btn-primary" ng-click="vm.createClient()" ng-disabled="!vm.accessKey || !vm.secretKey">Create Client</button>
+        <button class="btn btn-primary" ng-click="vm.creatDomain()" ng-disabled="!vm.accessKey || !vm.secretKey">Create Domain</button>
       </div>
     </div>
     <div class="panel panel-info" ng-repeat="clientCtr in vm.clients.val">
@@ -59,7 +60,7 @@
           </div>
           <div>
             <p>Press enter in the text box to send message to topic : {{clientCtr.topicName}} </p>
-            <textarea id="messageInput" ng-disabled="!clientCtr.topicName" ng-model="clientCtr.message" placeholder="message to send" ng-keyup="clientCtr.msgInputKeyUp($event)"></textarea>
+            <textarea rows="20" cols="80" id="messageInput" ng-disabled="!clientCtr.topicName" ng-model="clientCtr.message" placeholder="message to send" ng-keyup="clientCtr.msgInputKeyUp($event)"></textarea>
           </div>
         </div>
         <div class="col-md-6">
